@@ -71,15 +71,6 @@ spring.application.name=session1a-gemini-api
 spring.ai.google.genai.api-key=${GEMINI_API_KEY}
 spring.ai.google.genai.chat.options.model=gemini-3-flash-preview
 spring.ai.model.chat=google-genai
-
-# Disable unused Spring AI features
-spring.ai.model.embedding=none
-spring.ai.model.embedding.text=none
-spring.ai.model.embedding.multimodal=none
-spring.ai.model.image=none
-spring.ai.model.audio.transcription=none
-spring.ai.model.audio.speech=none
-spring.ai.model.moderation=none
 ```
 
 **Configuration Comparison:**

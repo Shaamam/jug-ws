@@ -56,14 +56,6 @@ spring.ai.openai.chat.options.model=gpt-4o-mini
 spring.ai.model.chat=openai
 spring.ai.openai.chat.api-key=${OPENAI_API_KEY}
 
-# Disable unused Spring AI features
-spring.ai.model.embedding=none
-spring.ai.model.embedding.text=none
-spring.ai.model.embedding.multimodal=none
-spring.ai.model.image=none
-spring.ai.model.audio.transcription=none
-spring.ai.model.audio.speech=none
-spring.ai.model.moderation=none
 ```
 
 ### Step 4: Run the Application
