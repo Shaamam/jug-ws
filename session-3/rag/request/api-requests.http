@@ -1,0 +1,64 @@
+### TextRAG API Endpoints
+### Base URL: http://localhost:8080
+
+###
+# 1. Upload Document - Processes and stores in vector store
+POST http://localhost:8080/api/v1/rag/documents/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="doc"; filename="velocity_motors_guide.docx.pdf"
+Content-Type: application/pdf
+
+< /Users/shaama/Documents/spring-ai/text-rag-chatbot/src/main/resources/pdf/velocity_motors_guide.pdf
+--boundary--
+
+###
+# 2. Chat - Ask questions about uploaded documents
+POST http://localhost:8080/api/v1/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Question": "What are the working hours for Velocity Motors employees?"
+}
+
+###
+# 3. Chat - What is the policy on overtime pay
+POST http://localhost:8080/api/v1/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Question": "What is the policy on overtime pay?"
+}
+
+###
+# 4. Chat - New session example
+POST http://localhost:8080/api/v1/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Question": "What are the employee benefits mentioned in the Velocity Motors handbook?"
+}
+
+###
+# 5. Chat - What is the policy for parental leave?
+POST http://localhost:8080/api/v1/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Question": "What is the policy for parental leave?"
+}
+
+###
+# 6. Chat - To Check Hallucination
+POST http://localhost:8080/api/v1/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Question": "Who is the CEO of Google?"
+}

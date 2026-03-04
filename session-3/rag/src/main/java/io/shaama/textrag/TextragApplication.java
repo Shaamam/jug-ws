@@ -1,13 +1,12 @@
-package tools.muthuishere.session1llmasapi;
+package io.shaama.textrag;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Session1LlmAsApiApplication {
+public class TextragApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(Session1LlmAsApiApplication.class, args);
+        SpringApplication.run(TextragApplication.class, args);
     }
-
 }

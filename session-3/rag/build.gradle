@@ -1,12 +1,12 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.3'
+    id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'tools.muthuishere'
+group = 'io.shaama'
 version = '0.0.1-SNAPSHOT'
-description = 'session1-llm-as-api'
+description = 'textrag-skeleton'
 
 java {
     toolchain {
@@ -22,33 +22,45 @@ configurations {
 
 repositories {
     mavenCentral()
-
-    // For Spring AI 2.0
-
-    maven { url 'https://repo.spring.io/milestone' }
-    maven { url 'https://repo.spring.io/snapshot' }
-    maven {
-        name = 'Central Portal Snapshots'
-        url = 'https://central.sonatype.com/repository/maven-snapshots/'
-    }
 }
 
+ext {
+    set('springAiVersion', "1.0.0")
+}
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    // TODO: Uncomment these dependencies - see README Setup Section
-    // implementation platform("org.springframework.ai:spring-ai-bom:2.0.0-M2")
-    // implementation 'org.springframework.ai:spring-ai-starter-model-openai'
-    // 
-    // // RAG dependencies
-    // implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // TODO: Step 2 - Uncomment Spring AI dependencies (see README)
     // implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
+    // implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-embedding'
+    // implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+    // implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
 
+    //Document processing - Apache POI for Word documents
+    implementation 'org.apache.poi:poi:5.3.0'
+    implementation 'org.apache.poi:poi-ooxml:5.3.0'
+    implementation 'org.apache.poi:poi-scratchpad:5.3.0'
+    
+    //PDF processing - Apache PDFBox for PDF documents
+    implementation 'org.apache.pdfbox:pdfbox:2.0.29'
+    implementation 'org.apache.pdfbox:fontbox:2.0.29'
+    implementation 'org.apache.pdfbox:pdfbox-tools:2.0.29'
+    
+    //API Documentation
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
 }
 
 tasks.named('test') {
