@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'tools.muthuishere'
+version = '0.0.1-SNAPSHOT'
+description = 'session7-mcp-client'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
+    maven {
+        name = 'Central Portal Snapshots'
+        url = 'https://central.sonatype.com/repository/maven-snapshots/'
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // TODO: Uncomment these dependencies - see README Step 2
+    // implementation platform("org.springframework.ai:spring-ai-bom:2.0.0-M2")
+    // // MCP Client — connects to remote MCP servers
+    // implementation 'org.springframework.ai:spring-ai-starter-mcp-client'
+    // // LLM — needed because the client decides which tools to call
+    // implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

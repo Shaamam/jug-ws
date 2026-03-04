@@ -1,0 +1,35 @@
+### Create a todo via MCP
+POST http://localhost:8081/api/chat
+Content-Type: application/json
+
+{
+  "question": "Create a todo for buying groceries with description 'Buy milk, eggs, and bread'",
+  "sessionId": "test-session-1"
+}
+
+### List all todos via MCP
+POST http://localhost:8081/api/chat
+Content-Type: application/json
+
+{
+  "question": "Show me all my todos",
+  "sessionId": "test-session-1"
+}
+
+### Complete a todo via MCP
+POST http://localhost:8081/api/chat
+Content-Type: application/json
+
+{
+  "question": "Mark the groceries todo as completed",
+  "sessionId": "test-session-1"
+}
+
+### Complex query via MCP
+POST http://localhost:8081/api/chat
+Content-Type: application/json
+
+{
+  "question": "How many incomplete todos do I have? List them.",
+  "sessionId": "test-session-1"
+}

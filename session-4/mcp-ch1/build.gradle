@@ -1,0 +1,63 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.7'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'tools.muthuishere'
+version = '0.0.1-SNAPSHOT'
+description = 'MCP Todo Spring Boot - Chapter 1'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
+	maven { url 'https://repo.spring.io/snapshot' }
+	maven {
+		name = 'Central Portal Snapshots'
+		url = 'https://central.sonatype.com/repository/maven-snapshots/'
+	}
+}
+
+dependencies {
+	implementation platform("org.springframework.ai:spring-ai-bom:1.1.0-M4")
+
+	// Basic Spring Boot dependencies
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// Database
+	implementation 'com.h2database:h2'
+
+	// Lombok for reducing boilerplate
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// MCP Server dependencies - TODO: Add these during the workshop
+	// implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
+	// implementation 'org.springframework.ai:spring-ai-starter-mcp-server'
+	// implementation 'org.springframework.ai:spring-ai-mcp-annotations'
+
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// TODO: Add development tasks during workshop
+// task devSse(type: org.springframework.boot.gradle.tasks.run.BootRun) {
+//     description = 'Run application in development mode with SSE profile'
+//     group = 'development'
+//     classpath = sourceSets.main.runtimeClasspath
+//     mainClass = 'tools.muthuishere.todo.TodoApplication'
+//     args = ['--spring.profiles.active=sse']
+// }

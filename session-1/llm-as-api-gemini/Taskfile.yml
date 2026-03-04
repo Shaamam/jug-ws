@@ -1,0 +1,20 @@
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  build:
+    desc: Build fat jar
+    cmds:
+      - ./gradlew clean build -x test
+
+  dev:
+    desc: Run Spring Boot with fast startup and auto-restart
+    cmds:
+      - ./gradlew bootRun --continuous
+
+  docker-run:
+    desc: Build Docker image and run with Docker Compose (synchronous)
+    cmds:
+      - docker-compose build
+      - docker-compose up
