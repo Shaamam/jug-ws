@@ -1,177 +1,166 @@
-# Session 3: RAG (Retrieval Augmented Generation) with PGVector
+# TextRAG Skeleton - Document Q&A with RAG Workshop
 
 ## 🎯 Learning Objectives
 
-By the end of this session, you will:
-- Understand what RAG is and why it's essential for grounding LLM responses
-- Work with vector embeddings and similarity search
-- Set up PostgreSQL with pgvector extension
-- Implement document ingestion into a vector database
-- Build RAG-enabled chat that answers from your proprietary data
-- Use Spring AI's `QuestionAnswerAdvisor` for context injection
+- Build a RAG (Retrieval-Augmented Generation) system with Spring AI
+- Process documents (PDF, Word, Text) and store them in a vector database
+- Implement semantic search with PGVector
+- Use Google Vertex AI Gemini for chat and embeddings
+- Configure QuestionAnswerAdvisor for context-aware responses
 
 ## 📋 Prerequisites
 
-- Completed Sessions 1 & 2
 - Java 21 installed
-- Docker Desktop installed and running
-- OpenAI API key configured
-- Basic understanding of databases
+- PostgreSQL with pgvector extension
+- Google Cloud Platform account with Vertex AI API enabled
+- GCP credentials configured (`gcloud auth application-default login`)
 
-## 🧠 What is RAG?
+## 🤔 What is RAG?
 
-**RAG (Retrieval Augmented Generation)** solves a fundamental LLM limitation: **LLMs don't know about YOUR data**.
+**Retrieval-Augmented Generation (RAG)** combines the power of:
+1. **Vector Search** - Find relevant document chunks using semantic similarity
+2. **LLM Generation** - Generate answers using retrieved context
 
-### The Problem:
-```
-User: "What is our return policy?"
-LLM: "I don't have access to your specific policies..."
-```
-
-### The RAG Solution:
-```
-1. Store your documents as vector embeddings in a database
-2. User asks: "What is our return policy?"
-3. System retrieves relevant document chunks via similarity search
-4. LLM receives both the question AND the retrieved context
-5. LLM answers based on YOUR data: "Your return policy allows..."
-```
-
-### Key Concepts:
-
-**Embeddings:** Numerical representations of text (e.g., `[0.23, -0.41, 0.78, ...]`)  
-**Vector Database:** Stores embeddings and enables similarity search  
-**PGVector:** PostgreSQL extension for vector storage (HNSW indexing)  
-**Similarity Search:** Finds documents semantically similar to the query  
-**Context Injection:** Adds retrieved documents to the LLM prompt
+**Why RAG?**
+- **Accurate:** Answers based on your specific documents
+- **Up-to-date:** Knowledge from documents loaded at runtime
+- **Traceable:** Can cite specific document sections
+- **Cost-effective:** No need to fine-tune models
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Setup Instructions
 
+Follow these steps to set up your Spring Boot application with RAG capabilities.
+
+### **Step 1: Prerequisites**
+
+- Java 21 installed
+- PostgreSQL 16+ with pgvector extension
+- Google Cloud Platform account
+- GCP credentials: `gcloud auth application-default login`
+
+### **Step 2: Enable Dependencies**
+
+Open `build.gradle` and uncomment the Spring AI dependencies:
+
+```gradle
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // Uncomment these Spring AI dependencies
+    implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
+    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-embedding'
+    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+
+    // Other dependencies already uncommented...
+}
 ```
-┌──────────────┐      ┌─────────────┐      ┌───────────┐
-│   Document   │─────>│  Embedding  │─────>│ PGVector  │
-│   (Your PDF) │      │   Model     │      │ Database  │
-└──────────────┘      └─────────────┘      └───────────┘
-                                                  ↓
-                                            Similarity
-┌──────────────┐                            Search ↓
-│ User Query   │───────────────────────────────────┐
-└──────────────┘                                   ↓
-       ↓                                    ┌──────────────┐
-       └────────────────────────────────────>│  LLM (GPT)   │
-                                            │ + Context    │
-                                            └──────────────┘
-                                                  ↓
-                                            Answer grounded
-                                            in YOUR data
-```
 
----
+**What each dependency does:**
+- `spring-ai-advisors-vector-store`: Provides QuestionAnswerAdvisor for RAG workflow
+- `spring-ai-starter-model-vertex-ai-embedding`: Google Vertex AI embeddings (text-embedding-005)
+- `spring-ai-starter-model-vertex-ai-gemini`: Google Gemini chat models
+- `spring-ai-starter-vector-store-pgvector`: PostgreSQL vector store integration
 
-## 🐳 Docker Setup
-
-### Step 1: Start PostgreSQL with PGVector
-
+**After uncommenting**, refresh Gradle dependencies:
 ```bash
-# Using docker-compose (recommended)
-docker-compose up -d
+./gradlew clean build
+```
 
-# Or manually:
+### **Step 3: Setup PostgreSQL with pgvector**
+
+Install and configure PostgreSQL with pgvector extension:
+
+**Using Docker:**
+```bash
 docker run -d \
-  --name pgvector \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=vectordb \
+  --name postgres-pgvector \
+  -e POSTGRES_USER=shaama \
+  -e POSTGRES_PASSWORD=xyz \
+  -e POSTGRES_DB=work \
   -p 5432:5432 \
   pgvector/pgvector:pg16
 ```
 
-### Step 2: Verify Connection
-
+**Or using Homebrew (macOS):**
 ```bash
-# Check if container is running
-docker ps | grep pgvector
+# Install PostgreSQL
+brew install postgresql@16
 
-# Test connection
-psql -h localhost -U postgres -d vectordb -c "SELECT version();"
+# Install pgvector
+brew install pgvector
+
+# Start PostgreSQL
+brew services start postgresql@16
+
+# Create database
+createdb work
+psql work -c "CREATE EXTENSION IF NOT EXISTS vector;"
 ```
 
-### Step 3: Add Spring AI Dependencies
-
-Open `build.gradle` and **uncomment** all the Spring AI dependencies:
-
-```gradle
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    // Uncomment these lines:
-    implementation platform("org.springframework.ai:spring-ai-bom:2.0.0-M2")
-    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
-    
-    // RAG dependencies
-    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
-    implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
-}
+**Verify installation:**
+```bash
+psql -U shaama -d work -c "SELECT * FROM pg_extension WHERE extname = 'vector';"
 ```
 
-**New Dependencies:**
-- `spring-ai-starter-vector-store-pgvector` - PGVector integration
-- `spring-ai-advisors-vector-store` - QuestionAnswerAdvisor for RAG
+### **Step 4: Configure Application Properties**
 
-### Step 4: Add Application Properties
-
-Open `src/main/resources/application.properties` and add:
+Open `src/main/resources/application.properties` and replace with:
 
 ```properties
-spring.application.name=session3-rag
+spring.application.name=textrag-skeleton
 
-# OpenAI Configuration
-spring.ai.openai.chat.options.model=gpt-4o-mini
-spring.ai.model.chat=openai
-spring.ai.openai.chat.api-key=${OPENAI_API_KEY}
+server.port=8080
+
+# Google Vertex AI - Gemini Chat Model
+spring.ai.vertex.ai.gemini.project-id=your-gcp-project-id
+spring.ai.vertex.ai.gemini.location=us-central1
+spring.ai.vertex.ai.gemini.chat.options.model=gemini-2.0-flash-exp
+spring.ai.vertex.ai.gemini.chat.options.temperature=0.7
+
+# PostgreSQL Database Configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/work
+spring.datasource.username=shaama
+spring.datasource.password=xyz
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# Google Vertex AI - Embeddings
+spring.ai.vertex.ai.embedding.project-id=your-gcp-project-id
+spring.ai.vertex.ai.embedding.location=us-central1
+spring.ai.vertex.ai.embedding.text.options.model=text-embedding-005
 
 # PGVector Configuration
-spring.datasource.url=jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:vectordb}
-spring.datasource.username=${POSTGRES_USER:postgres}
-spring.datasource.password=${POSTGRES_PASSWORD:postgres}
-
-# Vector Store Settings
 spring.ai.vectorstore.pgvector.initialize-schema=true
-spring.ai.vectorstore.pgvector.index-type=HNSW
-spring.ai.vectorstore.pgvector.distance-type=COSINE_DISTANCE
+spring.ai.vectorstore.pgvector.remove-existing-vector-store-table=true
+spring.ai.vectorstore.pgvector.dimensions=768
+spring.ai.vectorstore.pgvector.table-name=velocity_motors_data
+spring.ai.vectorstore.pgvector.schema-validation=false
+spring.ai.vectorstore.pgvector.index-type=NONE
 
-# Disable unused Spring AI features
-spring.ai.model.image=none
-spring.ai.model.audio.transcription=none
-spring.ai.model.audio.speech=none
-spring.ai.model.moderation=none
+# Logging
+logging.level.io.shaama.textrag=INFO
+logging.level.org.springframework.ai=DEBUG
 ```
 
-**Key Settings:**
-- `initialize-schema=true` - Auto-creates vector tables
-- `index-type=HNSW` - Fast approximate nearest neighbor search
-- `distance-type=COSINE_DISTANCE` - Similarity metric for embeddings
+**Important Configuration Notes:**
+- Replace `your-gcp-project-id` with your actual GCP project ID
+- `dimensions=768` matches text-embedding-005 model output size
+- `remove-existing-vector-store-table=true` clears data on restart (change to false in production)
+- Make sure your GCP credentials are configured: `gcloud auth application-default login`
 
-**Environment Variables (Optional):**
-
-Create `.env` file to override defaults:
+### **Step 5: Authenticate with Google Cloud**
 
 ```bash
-OPENAI_API_KEY=sk-your-key-here
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=vectordb
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+# Login to GCP
+gcloud auth application-default login
+
+# Verify credentials
+gcloud auth application-default print-access-token
 ```
 
-### Step 5: Run the Application
+### **Step 6: Run the Application**
 
 ```bash
 ./gradlew bootRun
@@ -181,436 +170,371 @@ The application will start on `http://localhost:8080`
 
 ---
 
-## 💻 Implementation Steps
+## 💻 Implementation
 
-### Exercise 1: Document Ingestion
+### Exercise 1: Create ChatClient Configuration
 
-**Objective:** Store documents as vector embeddings in PGVector.
+**Objective:** Configure ChatClient with QuestionAnswerAdvisor for RAG.
 
-**Endpoint:** `POST /api/rag/documents`
+**File:** `ChatClientConfig.java`
 
 **Key Concepts:**
-- `Document` represents a text chunk with metadata
-- Spring AI automatically generates embeddings via OpenAI
-- PGVector stores both text and embedding vector
+- `QuestionAnswerAdvisor` - Automatically retrieves relevant documents and adds them to the prompt context
+- `SearchRequest` - Configures similarity threshold and number of results (topK)
+- `VectorStore` - Interface for vector similarity search
 
 **Implementation:**
 
-Replace the TODO section in `ingestDocuments` method with:
+Replace the TODO sections in `ChatClientConfig.java`:
 
 ```java
-List<Document> documents = requests.stream()
-    .map(req -> new Document(req.content()))
-    .toList();
+package io.shaama.textrag.config;
 
-vectorStore.add(documents);
-```
+import lombok.RequiredArgsConstructor;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatModel;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-**Complete Method:**
-```java
-@PostMapping("/api/rag/documents")
-public List<Document> ingestDocuments(@RequestBody List<DocumentRequest> requests) {
-    log.info("Ingesting {} documents", requests.size());
+@Configuration
+@RequiredArgsConstructor
+public class ChatClientConfig {
 
-    List<Document> documents = requests.stream()
-        .map(req -> new Document(req.content()))
-        .toList();
+    private final VertexAiGeminiChatModel vertexAiGeminiChatModel;
+    private final VectorStore vectorStore;
 
-    vectorStore.add(documents);
-    
-    return documents;
+    @Bean
+    public QuestionAnswerAdvisor questionAnswerAdvisor() {
+        return QuestionAnswerAdvisor.builder(vectorStore)
+                .searchRequest(
+                        SearchRequest.builder()
+                                .similarityThreshold(0.8d)  // Only retrieve chunks with 80%+ similarity
+                                .topK(5)                    // Retrieve top 5 most relevant chunks
+                                .build()
+                )
+                .build();
+    }
+
+    @Bean
+    public ChatClient chatClient() {
+        return ChatClient.create(vertexAiGeminiChatModel);
+    }
 }
 ```
 
 **How It Works:**
-1. Receives text documents via REST API
-2. Converts each text to a `Document` object
-3. Spring AI sends text to OpenAI's embedding model (`text-embedding-3-small`)
-4. OpenAI returns 1536-dimensional vector
-5. PGVector stores both text and vector
-
-**Test:**
-```bash
-curl -X POST http://localhost:8080/api/rag/documents \
-  -H "Content-Type: application/json" \
-  -d '[
-    {"content": "Our company offers a 30-day money-back guarantee on all products."},
-    {"content": "We ship orders within 24 hours via FedEx and UPS."},
-    {"content": "Customer support is available Monday-Friday, 9AM-5PM EST."}
-  ]'
-```
-
-**Expected:** Returns the ingested documents with generated IDs.
+1. `QuestionAnswerAdvisor` intercepts user questions
+2. Converts question to embedding vector
+3. Searches vector store for similar document chunks
+4. Adds retrieved chunks to the prompt context
+5. LLM generates answer using the context
 
 ---
 
-### Exercise 2: Similarity Search
+### Exercise 2: Implement ChatService
 
-**Objective:** Find documents semantically similar to a query using vector search.
+**Objective:** Build the service that uses ChatClient with QuestionAnswerAdvisor.
 
-**Endpoint:** `POST /api/rag/search`
-
-**Key Concepts:**
-- `SearchRequest` configures the search (query, topK, similarity threshold)
-- `topK` = number of results to return (e.g., top 3 most similar)
-- Similarity is measured by cosine distance between vectors
-- HNSW index makes search fast even with millions of documents
+**File:** `ChatService.java`
 
 **Implementation:**
 
-Replace the TODO section in `search` method with:
+Replace the TODO sections in `ChatService.java`:
 
 ```java
-SearchRequest searchRequest = SearchRequest.builder()
-    .query(request.question())
-    .topK(3)
-    .build();
+package io.shaama.textrag.chat;
 
-return vectorStore.similaritySearch(searchRequest);
-```
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.stereotype.Service;
 
-**Complete Method:**
-```java
-@PostMapping("/api/rag/search")
-public List<Document> search(@RequestBody ChatBotRequest request) {
-    log.info("Similarity search for: {}", request.question());
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ChatService {
 
-    SearchRequest searchRequest = SearchRequest.builder()
-        .query(request.question())
-        .topK(3)
-        .build();
+    private final ChatClient chatClient;
+    private final QuestionAnswerAdvisor questionAnswerAdvisor;
 
-    return vectorStore.similaritySearch(searchRequest);
+    public ChatResponse getAnswer(ChatRequest chatRequest) {
+        String question = chatRequest.Question();
+        String systemPrompt = getSystemPrompt();
+
+        String answer = chatClient
+                .prompt()
+                .system(systemPrompt)
+                .user(question)
+                .advisors(questionAnswerAdvisor)  // ← RAG magic happens here!
+                .call()
+                .content();
+
+        return new ChatResponse(question, answer);
+    }
+
+    private static String getSystemPrompt() {
+        return  "You are TextRAG Assistant, a specialized AI helper for document question-answering using Retrieval-Augmented Generation (RAG). " +
+                "Your role is to provide accurate, helpful answers based on the uploaded document content. " +
+                "When answering questions: " +
+                "1. Prioritize information from the provided document context " +
+                "2. Be precise and cite relevant sections when possible " +
+                "3. If the answer isn't in the documents, clearly state that " +
+                "4. Provide concise but comprehensive responses " +
+                "5. Ask clarifying questions if the user's query is ambiguous " +
+                "Always be helpful, accurate, and maintain a professional tone. **Strictly** Dont give result in markdown only answer in PLAIN-TEXT format";
+    }
 }
 ```
 
-**How It Works:**
-1. User query is converted to embedding by OpenAI
-2. PGVector computes cosine similarity between query vector and all stored vectors
-3. Returns top 3 most similar documents
-4. No keyword matching - purely semantic similarity!
+**Update ChatController:**
 
-**Example:**
+In `ChatController.java`, uncomment the implementation:
 
-Query: **"How long does delivery take?"**  
-Most Similar Document: **"We ship orders within 24 hours..."**
-
-Even though "delivery" doesn't appear in the document, the semantic meaning matches!
-
-**Test:**
-```bash
-curl -X POST http://localhost:8080/api/rag/search \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is your refund policy?"}'
+```java
+@PostMapping
+public ResponseEntity<ChatResponse> askQuestion(@RequestBody ChatRequest chatRequest) {
+    try {
+        log.info("Received question: {}", chatRequest.Question());
+        ChatResponse response = chatService.getAnswer(chatRequest);
+        log.info("Generated response: {}", response.answer());
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        log.error("Error processing question: {}", e.getMessage(), e);
+        return ResponseEntity.internalServerError().build();
+    }
+}
 ```
-
-**Expected:** Returns the document about the 30-day money-back guarantee.
 
 ---
 
-### Exercise 3: RAG Chat with QuestionAnswerAdvisor
+### Exercise 3: Implement Vector Store Service
 
-**Objective:** Build a chat endpoint that answers questions using retrieved context.
+**Objective:** Store document chunks in the vector database.
 
-**Endpoint:** `POST /api/rag/chat`
-
-**Key Concepts:**
-- `QuestionAnswerAdvisor` is a Spring AI advisor that automates RAG
-- It automatically:
-  - Retrieves relevant documents via similarity search  
-  - Injects them into the LLM prompt as context  
-  - Instructs the LLM to answer based on that context
-- No manual prompt engineering needed!
+**File:** `VectorStoreService.java`
 
 **Implementation:**
 
-Replace the TODO section in `ragChat` method with:
+Replace the TODO section in `VectorStoreService.java`:
 
 ```java
-QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore)
-    .searchRequest(SearchRequest.builder().topK(3).build())
-    .build();
+package io.shaama.textrag.rag;
 
-String answer = ChatClient.create(chatModel)
-    .prompt()
-    .system("You are a helpful assistant. Answer questions based on the provided context. If the context doesn't contain relevant information, say so.")
-    .advisors(advisor)
-    .user(question)
-    .call()
-    .content();
-```
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.stereotype.Service;
 
-**Complete Method:**
-```java
-@PostMapping("/api/rag/chat")
-public ChatBotResponse ragChat(@RequestBody ChatBotRequest request) {
-    String question = request.question();
-    log.info("RAG chat, question: {}", question);
+import java.util.List;
 
-    QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore)
-        .searchRequest(SearchRequest.builder().topK(3).build())
-        .build();
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class VectorStoreService {
 
-    String answer = ChatClient.create(chatModel)
-        .prompt()
-        .system("You are a helpful assistant. Answer questions based on the provided context. If the context doesn't contain relevant information, say so.")
-        .advisors(advisor)
-        .user(question)
-        .call()
-        .content();
+    private final VectorStore vectorStore;
 
-    return new ChatBotResponse(question, answer);
+    public String addToVectorStore(List<String> contents){
+        // Convert strings to Document objects
+        List<Document> documents = contents
+                .parallelStream()
+                .map(Document::new)  // Each chunk becomes a Document
+                .toList();
+
+        // Store documents (automatically generates embeddings)
+        vectorStore.add(documents);
+
+        log.info("Added {} documents to vector store", documents.size());
+        return "Data Added";
+    }
 }
 ```
 
-**What QuestionAnswerAdvisor Does:**
+**Update DocumentController:**
 
-Behind the scenes, it transforms your prompt like this:
+In `DocumentController.java`, uncomment the implementation:
 
-```
-Original:
-  User: "What is your refund policy?"
-
-After QuestionAnswerAdvisor:
-  System: "You are a helpful assistant. Answer based on context..."
-  
-  Context (injected automatically):
-  - "Our company offers a 30-day money-back guarantee on all products."
-  
-  User: "What is your refund policy?"
-```
-
-The LLM now has YOUR data to answer from!
-
-**Test:**
-```bash
-curl -X POST http://localhost:8080/api/rag/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Do you offer refunds?"}'
-```
-
-**Expected:** The LLM should mention the 30-day money-back guarantee from your ingested documents.
-
----
-
-## 🧪 Complete Testing Workflow
-
-### Step 1: Start Infrastructure
-```bash
-# Start PostgreSQL
-docker-compose up -d
-
-# Start Spring Boot app
-./gradlew bootRun
-```
-
-### Step 2: Ingest Company Knowledge Base
-```bash
-curl -X POST http://localhost:8080/api/rag/documents \
-  -H "Content-Type: application/json" \
-  -d '[
-    {"content": "Our company was founded in 2020 in San Francisco."},
-    {"content": "We offer free shipping on orders over $50."},
-    {"content": "Our premium plan costs $29.99/month and includes priority support."},
-    {"content": "All products come with a 2-year warranty."}
-  ]'
-```
-
-### Step 3: Test Similarity Search
-```bash
-# Should return the warranty document
-curl -X POST http://localhost:8080/api/rag/search \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Tell me about product guarantees"}'
-```
-
-### Step 4: Test RAG Chat
-```bash
-# Should answer using retrieved context
-curl -X POST http://localhost:8080/api/rag/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "When was your company founded?"}'
-```
-
-**Expected:** "Our company was founded in 2020 in San Francisco."
-
-### Step 5: Test Without Context
-```bash
-# Ask about something NOT in the documents
-curl -X POST http://localhost:8080/api/rag/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is quantum computing?"}'
-```
-
-**Expected:** "The provided context doesn't contain information about quantum computing."
-
----
-
-## 🔍 Debugging Tips
-
-### Issue: "Connection refused" to PostgreSQL
-
-**Symptoms:** `java.net.ConnectException: Connection refused`
-
-**Causes & Fixes:**
-1. **Docker not running:** Start Docker Desktop
-2. **Wrong port:** Check `docker ps` - PostgreSQL should be on port 5432
-3. **Container stopped:** Run `docker-compose up -d`
-
-**Verify:**
-```bash
-docker ps | grep pgvector
-```
-
----
-
-### Issue: "Rate limit exceeded" from OpenAI
-
-**Symptoms:** 429 error when ingesting many documents
-
-**Cause:** OpenAI API rate limits for embedding requests
-
-**Fix:** Implement retry logic or batch processing:
 ```java
-@Retryable(maxAttempts = 3, backoff = @Backoff(delay = 2000))
-public void ingest(List<Document> docs) {
-    vectorStore.add(docs);
+@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<String> uploadDocument(@RequestParam("doc") MultipartFile doc) {
+    log.info("Processing document: {}", doc.getOriginalFilename());
+
+    try {
+        List<String> processedChunks = documentProcessingService.processDocument(doc);
+        log.info("Successfully processed document into {} chunks", processedChunks.size());
+        String responseMessage = vectorStoreService.addToVectorStore(processedChunks);
+        return ResponseEntity.ok(responseMessage);
+    } catch (Exception e) {
+        log.error("Error processing document: {}", e.getMessage(), e);
+        return ResponseEntity.internalServerError().build();
+    }
 }
 ```
 
----
-
-### Issue: Search returns irrelevant results
-
-**Symptoms:** Documents returned don't match the query
-
-**Causes & Fixes:**
-1. **Not enough documents:** Ingest at least 10-20 documents for meaningful similarity
-2. **Documents too generic:** Make documents specific and detailed
-3. **Wrong topK:** Try `topK(5)` instead of `topK(3)`
-4. **Add similarity threshold:**
-   ```java
-   SearchRequest.builder()
-       .query(query)
-       .topK(3)
-       .similarityThreshold(0.7)  // Only return docs with >70% similarity
-       .build();
-   ```
+**Note:** `DocumentProcessingService.java` is already complete - it handles PDF, Word, and text file extraction.
 
 ---
 
-### Issue: RAG chat still gives wrong answers
+## 🧪 Testing
 
-**Symptoms:** LLM ignores retrieved context
+### 1. Upload a Document
 
-**Causes & Fixes:**
-1. **System prompt too weak:** Make it more explicit:
-   ```java
-   .system("IMPORTANT: Answer ONLY using the provided context. Do not use your general knowledge.")
-   ```
+Create a test file `test-doc.txt`:
+```text
+Spring AI is a framework for building AI applications with Spring Boot.
 
-2. **Context not relevant:** Check what `similaritySearch()` returns - maybe the query isn't finding the right documents
+It provides abstractions for working with various AI models including OpenAI, Azure OpenAI, and Google Vertex AI.
 
-3. **Document chunks too large:** Split documents into smaller chunks (200-500 words)
+Spring AI supports vector stores like PGVector, Chroma, and Pinecone for RAG applications.
 
----
-
-## 📚 Advanced Topics
-
-### Chunking Strategies
-
-For large documents, split into chunks before ingesting:
-
-```java
-// Example: Split by paragraphs
-String largeDoc = "...very long text...";
-List<Document> chunks = Arrays.stream(largeDoc.split("\\n\\n"))
-    .map(Document::new)
-    .toList();
-
-vectorStore.add(chunks);
+The framework includes advisors like QuestionAnswerAdvisor for implementing retrieval-augmented generation patterns.
 ```
 
-**Best Practices:**
-- Chunk size: 200-500 words
-- Include overlap (20-50 words) between chunks
-- Preserve context boundaries (don't split mid-sentence)
+Upload it:
+```bash
+curl -X POST http://localhost:8080/api/v1/rag/documents/upload \
+  -F "doc=@test-doc.txt"
+```
 
----
+Expected response: `Data Added`
 
-### Adding Metadata for Filtering
+### 2. Ask Questions
 
-```java
-Document doc = new Document(
-    "Our return policy...",
-    Map.of(
-        "type", "policy",
-        "department", "customer_service",
-        "version", "2024.1"
-    )
-);
+```bash
+# Question about Spring AI
+curl -X POST http://localhost:8080/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"Question": "What is Spring AI?"}'
 
-vectorStore.add(List.of(doc));
+# Question about vector stores
+curl -X POST http://localhost:8080/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"Question": "Which vector stores does Spring AI support?"}'
 
-// Search with filters
-SearchRequest request = SearchRequest.builder()
-    .query("refund policy")
-    .topK(3)
-    .filterExpression("type == 'policy' && department == 'customer_service'")
-    .build();
+# Question about RAG
+curl -X POST http://localhost:8080/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"Question": "What is QuestionAnswerAdvisor used for?"}'
+```
+
+### 3. Test with PDF
+
+```bash
+# Upload a PDF file
+curl -X POST http://localhost:8080/api/v1/rag/documents/upload \
+  -F "doc=@your-document.pdf"
+
+# Ask questions about the PDF content
+curl -X POST http://localhost:8080/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"Question": "Summarize the main points of the document"}'
 ```
 
 ---
 
-### Hybrid Search (Keyword + Semantic)
+## 🎯 Success Criteria
 
-Combine vector similarity with traditional keyword search for best results.
+- ✅ PostgreSQL with pgvector running
+- ✅ GCP credentials configured
+- ✅ Application starts without errors
+- ✅ Documents uploaded successfully
+- ✅ Questions answered using document context
+- ✅ Answers are accurate and cite document sources
 
-```java
-// PGVector supports hybrid search via SQL
-// Example: 60% semantic + 40% keyword matching
-// (Implementation requires custom query)
+---
+
+## 🚀 Extension Ideas
+
+1. **Metadata Filtering:** Add metadata to documents (author, date, category) and filter search results
+2. **Hybrid Search:** Combine vector search with keyword search
+3. **Multi-turn Conversations:** Maintain conversation history across questions
+4. **Document Management:** Add endpoints to list, delete, and update documents
+5. **Streaming Responses:** Use ChatClient's stream API for real-time responses
+6. **Custom Chunking:** Implement smarter chunking strategies (sentence-based, paragraph-based)
+
+---
+
+## 📚 Key Concepts
+
+### RAG Architecture
+```
+User Question
+     ↓
+Convert to Embedding
+     ↓
+Vector Search (PGVector)
+     ↓
+Retrieve Top K Documents
+     ↓
+Add to Prompt Context
+     ↓
+LLM Generates Answer
+     ↓
+Return Response
 ```
 
----
+### Configuration Tuning
 
-## 🎯 Key Takeaways
+**Similarity Threshold:**
+- `0.7` - Loose matching, more results
+- `0.8` - Balanced (recommended)
+- `0.9` - Strict matching, fewer results
 
-1. **RAG grounds LLMs** in your proprietary data  
-2. **Vector embeddings** capture semantic meaning, not just keywords  
-3. **PGVector** = Production-ready vector database with HNSW indexing  
-4. **QuestionAnswerAdvisor** automates context retrieval and injection  
-5. **Chunking strategy** matters for retrieval quality  
-6. **Metadata filtering** enables precise document selection  
+**TopK:**
+- `3-5` - Good for specific questions
+- `5-10` - Better for broad topics
+- `10+` - Risk of context overflow
 
----
-
-## 🚀 Real-World Use Cases
-
-- **Customer Support:** Answer from product manuals, FAQs, policies  
-- **Legal:** Search through contracts, case law, regulations  
-- **Healthcare:** Query medical literature, patient records  
-- **Code Search:** Find relevant code snippets in large codebases  
-- **Research:** Summarize and query academic papers  
+**Embedding Models:**
+- `text-embedding-005` - Latest, best quality (768 dimensions)
+- `textembedding-gecko@003` - Faster, smaller (768 dimensions)
 
 ---
 
-## 📖 Related Documentation
+## 🐛 Troubleshooting
 
-- [Spring AI Vector Stores](https://docs.spring.io/spring-ai/reference/api/vectordbs.html)
-- [PGVector Documentation](https://github.com/pgvector/pgvector)
-- [OpenAI Embeddings](https://platform.openai.com/docs/guides/embeddings)
-- [HNSW Algorithm](https://arxiv.org/abs/1603.09320)
+**Error: "Cannot connect to PostgreSQL"**
+- Check if PostgreSQL is running: `pg_isready`
+- Verify credentials in application.properties
+- Ensure pgvector extension is installed
+
+**Error: "GCP authentication failed"**
+- Run: `gcloud auth application-default login`
+- Verify project ID in application.properties
+- Check Vertex AI API is enabled in GCP Console
+
+**Error: "Vector dimension mismatch"**
+- Ensure `spring.ai.vectorstore.pgvector.dimensions=768` matches your embedding model
+- text-embedding-005 uses 768 dimensions
+
+**Documents uploaded but no results found:**
+- Lower similarity threshold (try 0.7)
+- Increase topK value (try 10)
+- Check logs for embedding generation errors
 
 ---
 
-## 🎓 Workshop Progress
+## 📖 Resources
 
-✅ **Session 1:** LLM as API  
-✅ **Session 2:** Tool Calling  
-🎯 **Session 3:** RAG with Vector Stores ← You are here  
-📍 **Session 4:** MCP Server Implementation  
+- [Spring AI Documentation](https://docs.spring.io/spring-ai/reference/)
+- [Google Vertex AI](https://cloud.google.com/vertex-ai/docs)
+- [PGVector Extension](https://github.com/pgvector/pgvector)
+- [RAG Best Practices](https://www.pinecone.io/learn/retrieval-augmented-generation/)
 
 ---
 
-**Ready to continue?** Move to **Session 4: Model Context Protocol** to learn about standardized tool exposure across applications!
+## 🏁 What You've Built
+
+A complete RAG system that:
+- Processes multi-format documents (PDF, Word, Text)
+- Stores document embeddings in PostgreSQL with pgvector
+- Performs semantic search to find relevant context
+- Uses Google Vertex AI Gemini for intelligent question answering
+- Provides API endpoints for document upload and chat
+
+This is production-ready foundation for building document Q&A systems, knowledge bases, and AI-powered search applications!
