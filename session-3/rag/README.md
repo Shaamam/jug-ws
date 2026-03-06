@@ -117,13 +117,13 @@ server.port=8080
 # Google Vertex AI - Gemini Chat Model
 spring.ai.vertex.ai.gemini.project-id=your-gcp-project-id
 spring.ai.vertex.ai.gemini.location=us-central1
-spring.ai.vertex.ai.gemini.chat.options.model=gemini-2.0-flash-exp
+spring.ai.vertex.ai.gemini.chat.options.model=gemini-2.5-flash
 spring.ai.vertex.ai.gemini.chat.options.temperature=0.7
 
 # PostgreSQL Database Configuration
-spring.datasource.url=jdbc:postgresql://localhost:5432/work
-spring.datasource.username=shaama
-spring.datasource.password=xyz
+spring.datasource.url=jdbc:postgresql://localhost:5434/spring_creator
+spring.datasource.username=spring_user
+spring.datasource.password=spring_password
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # Google Vertex AI - Embeddings
