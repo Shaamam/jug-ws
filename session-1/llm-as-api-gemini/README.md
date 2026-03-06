@@ -65,12 +65,27 @@ dependencies {
 Open `src/main/resources/application.properties` and add:
 
 ```properties
-spring.application.name=session1a-gemini-api
+spring.application.name=session1-llm-as-api
 
-# Google Gemini Configuration
+spring.ai.model.chat=google-genai
 spring.ai.google.genai.api-key=${GEMINI_API_KEY}
 spring.ai.google.genai.chat.options.model=gemini-3-flash-preview
-spring.ai.model.chat=google-genai
+
+
+# Disable embeddings (all types)
+spring.ai.model.embedding=none
+spring.ai.model.embedding.text=none
+spring.ai.model.embedding.multimodal=none
+
+# Disable image generation
+spring.ai.model.image=none
+
+# Disable audio
+spring.ai.model.audio.transcription=none
+spring.ai.model.audio.speech=none
+
+# Disable moderation
+spring.ai.model.moderation=none
 ```
 
 **Configuration Comparison:**
