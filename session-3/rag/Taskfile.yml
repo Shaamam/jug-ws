@@ -18,3 +18,20 @@ tasks:
     cmds:
       - docker-compose build
       - docker-compose up
+
+  start:postgres:
+    desc: Start local PostgreSQL using Docker Compose
+    cmds:
+      - docker network create springisession-network || echo "✅ Network springisession-network already exists"
+      - docker compose -f docker-compose-postgres.yaml up -d
+
+  stop:postgres:
+    desc: Stop local PostgreSQL Docker Compose instance
+    cmds:
+      - docker compose -f docker-compose-postgres.yaml down
+
+  clear:postgres:
+    desc: Clear PostgreSQL containers, volumes, and all data (WARNING - deletes all data)
+    cmds:
+      - docker compose -f docker-compose-postgres.yaml down -v
+      - echo "✅ PostgreSQL containers and volumes cleared"

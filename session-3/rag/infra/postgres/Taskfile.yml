@@ -1,0 +1,28 @@
+version: '3'
+
+dotenv: ["../../.env"]
+
+tasks:
+  # Local Starts
+  generate:sql:
+    desc: Generate a SQL for dev
+    cmds:
+      - bun generateinitscript.js
+
+
+  local:shell:
+    desc: Open PostgreSQL shell (local environment)
+    cmds:
+      - task generate:sql
+      - docker exec -it resume-creator-postgres psql -U $POSTGRES_USER -d $POSTGRES_DB
+    dotenv:
+      - .env
+
+  dev:shell:
+    desc: Open PostgreSQL shell (dev environment)
+    cmds:
+      - task generate:sql
+      - ssh -t -i $SSH_KEY_PATH $SSH_USER@$WEB_SERVER_IP "docker exec -it reqsume-app-postgres psql -U $POSTGRES_USER -d $POSTGRES_DB"
+    dotenv:
+      - ../../.env.dev
+
