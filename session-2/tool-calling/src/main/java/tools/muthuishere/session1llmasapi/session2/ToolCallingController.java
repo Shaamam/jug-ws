@@ -5,8 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.web.bind.annotation.*;
-import tools.muthuishere.session1llmasapi.session1.ChatBotRequest;
-import tools.muthuishere.session1llmasapi.session1.ChatBotResponse;
 
 @Slf4j
 @RestController

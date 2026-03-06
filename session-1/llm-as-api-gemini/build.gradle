@@ -7,7 +7,7 @@ plugins {
 
 group = 'tools.muthuishere'
 version = '0.0.1-SNAPSHOT'
-description = 'session1-llm-as-api'
+description = 'session1-llm-as-api-gemini'
 
 java {
     toolchain {
@@ -58,7 +58,7 @@ dependencies {
     // TODO: Uncomment these dependencies - see README Setup Section
 
     // // Google Gemini instead of OpenAI
-     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+//     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
 
 }
 

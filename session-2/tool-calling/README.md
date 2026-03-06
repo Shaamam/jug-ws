@@ -49,12 +49,27 @@ dependencies {
 Open `src/main/resources/application.properties` and add:
 
 ```properties
-spring.application.name=session2-tool-calling
-
-# OpenAI Configuration
+spring.application.name=session1-llm-as-api
+# spring.ai.openai.api-key=${OPENAI_API_KEY}
 spring.ai.openai.chat.options.model=gpt-4o-mini
+
 spring.ai.model.chat=openai
 spring.ai.openai.chat.api-key=${OPENAI_API_KEY}
+
+# Disable embeddings (all types)
+spring.ai.model.embedding=none
+spring.ai.model.embedding.text=none
+spring.ai.model.embedding.multimodal=none
+
+# Disable image generation
+spring.ai.model.image=none
+
+# Disable audio
+spring.ai.model.audio.transcription=none
+spring.ai.model.audio.speech=none
+
+# Disable moderation
+spring.ai.model.moderation=none
 
 ```
 

@@ -7,7 +7,7 @@ plugins {
 
 group = 'tools.muthuishere'
 version = '0.0.1-SNAPSHOT'
-description = 'session1-llm-as-api'
+description = 'session1-llm-as-api-openai'
 
 java {
     toolchain {
@@ -55,7 +55,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+//     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 
 }
 
