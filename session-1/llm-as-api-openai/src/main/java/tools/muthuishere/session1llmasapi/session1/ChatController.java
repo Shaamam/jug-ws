@@ -3,6 +3,9 @@ package tools.muthuishere.session1llmasapi.session1;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -17,15 +20,23 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 
+import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
+
 @Slf4j
 @RestController
-@RequiredArgsConstructor
 public class ChatController {
+
+//    private final ChatClient chatClient;
 
     private final ChatModel chatModel;
 
-    // In-memory conversation history per sessionId
-    private final Map<String, List<org.springframework.ai.chat.messages.Message>> conversationHistory = new ConcurrentHashMap<>();
+    public ChatController(ChatModel chatModel , ChatMemory chatMemory) {
+//        MessageChatMemoryAdvisor messageChatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+        this.chatModel = chatModel;
+//        this.chatClient = ChatClient.builder(chatModel)
+//                .defaultAdvisors(messageChatMemoryAdvisor)
+//                .build();
+    }
 
     // ============================================================================
     // EXERCISE 1: Plain question → answer

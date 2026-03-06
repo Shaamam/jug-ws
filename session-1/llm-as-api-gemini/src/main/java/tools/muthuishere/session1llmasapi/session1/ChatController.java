@@ -22,11 +22,18 @@ import java.util.ArrayList;
 @RequiredArgsConstructor
 public class ChatController {
 
+    //    private final ChatClient chatClient;
+
     // TODO: Inject ChatModel using constructor injection (Lombok @RequiredArgsConstructor already handles this)
     private final ChatModel chatModel;
 
-    // In-memory conversation history per sessionId
-    private final Map<String, List<org.springframework.ai.chat.messages.Message>> conversationHistory = new ConcurrentHashMap<>();
+    public ChatController(ChatModel chatModel , ChatMemory chatMemory) {
+//        MessageChatMemoryAdvisor messageChatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+        this.chatModel = chatModel;
+//        this.chatClient = ChatClient.builder(chatModel)
+//                .defaultAdvisors(messageChatMemoryAdvisor)
+//                .build();
+    }
 
     // ============================================================================
     // EXERCISE 1: Plain question → answer
@@ -83,21 +90,13 @@ public class ChatController {
         String sessionId = chatBotRequest.sessionId();
         log.info("Chat with memory, sessionId: {}, question: {}", sessionId, question);
 
-        // TODO: Get or create conversation history for this session
-        // List<org.springframework.ai.chat.messages.Message> history = conversationHistory.computeIfAbsent(sessionId, k -> new ArrayList<>(List.of(
-        //     new SystemMessage("You are a helpful assistant for a tech workshop. Remember the conversation context.")
-        // )));
-
-        // TODO: Add user message to history
-        // history.add(new UserMessage(question));
-
-        // TODO: Create prompt from history and get response
-        // Prompt prompt = new Prompt(history);
-        // ChatResponse response = chatModel.call(prompt);
-        // String answer = response.getResult().getOutput().getText();
-
-        // TODO: Store assistant response in history for next turn
-        // history.add(response.getResult().getOutput());
+//        String answer = chatClient
+//                .prompt()
+//                .system("You are a helpful assistant for a tech workshop. Remember the conversation context.")
+//                .user(question)
+//                .advisors(advisor -> advisor.param(CONVERSATION_ID, sessionId))
+//                .call()
+//                .content();
 
         String answer = "TODO: Implement conversation memory";
 
