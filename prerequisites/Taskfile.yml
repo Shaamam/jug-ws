@@ -1,0 +1,43 @@
+version: '3'
+
+tasks:
+  doctor:
+    desc: Run system prerequisites check
+    cmds:
+      - sh doctor.sh
+
+  test-openai:
+    desc: Test OpenAI API with GPT model
+    cmds:
+      - sh test-openai.sh
+
+  test-anthropic:
+    desc: Test Anthropic API with Claude model
+    cmds:
+      - sh test-anthropic.sh
+
+  test-gemini:
+    desc: Test Google Gemini API
+    cmds:
+      - sh test-gemini.sh
+
+  test-all:
+    desc: Run all API tests
+    cmds:
+      - task: test-openai
+      - task: test-anthropic
+      - task: test-gemini
+
+  all:
+    desc: Run doctor check and all API tests
+    cmds:
+      - task: doctor
+      - echo ""
+      - echo "Running API Tests..."
+      - echo ""
+      - task: test-all
+
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
