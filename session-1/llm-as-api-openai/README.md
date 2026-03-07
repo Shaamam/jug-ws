@@ -213,18 +213,13 @@ curl -X POST http://localhost:8080/api/chat \
 Replace the TODO line in the `chatWithMemory` method with:
 
 ```java
-List<org.springframework.ai.chat.messages.Message> history = conversationHistory.computeIfAbsent(sessionId, k -> new ArrayList<>(List.of(
-    new SystemMessage("You are a helpful assistant for a tech workshop. Remember the conversation context.")
-)));
-
-history.add(new UserMessage(question));
-
-Prompt prompt = new Prompt(history);
-ChatResponse response = chatModel.call(prompt);
-String answer = response.getResult().getOutput().getText();
-
-// Store assistant response in history for next turn
-history.add(response.getResult().getOutput());
+String answer = chatClient
+        .prompt()
+        .system("You are a helpful assistant for a tech workshop. Remember the conversation context.")
+        .user(question)
+        .advisors(advisor -> advisor.param(CONVERSATION_ID, sessionId))
+        .call()
+        .content();
 ```
 
 **Complete Method (for reference):**
