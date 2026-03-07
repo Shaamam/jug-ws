@@ -71,7 +71,8 @@ server.port=8081
 
 # MCP Client Configuration
 spring.ai.mcp.client.type=SYNC
-spring.ai.mcp.client.httpclients.todo-server.url=http://localhost:8080
+spring.ai.mcp.client.streamable-http.connections.todo-server.url=http://localhost:8080
+spring.ai.mcp.client.streamable-http.connections.todo-server.endpoint=mcp
 
 # OpenAI Configuration
 spring.ai.openai.chat.api-key=${OPENAI_API_KEY}
@@ -133,7 +134,7 @@ Replace the TODO sections in the constructor and chat method:
 public McpClientController(ChatModel chatModel,
                            ToolCallbackProvider toolCallbackProvider) {
     this.chatClient = ChatClient.builder(chatModel)
-            .defaultTools(toolCallbackProvider)  // ← Magic happens here!
+            .defaultToolCallbacks(toolCallbackProvider)  // ← Magic happens here!
             .build();
 }
 ```

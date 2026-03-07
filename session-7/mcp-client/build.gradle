@@ -1,12 +1,13 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.3'
+    id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
+
 group = 'tools.muthuishere'
 version = '0.0.1-SNAPSHOT'
-description = 'session7-mcp-client'
+description = 'mcp-client'
 
 java {
     toolchain {
@@ -20,8 +21,19 @@ configurations {
     }
 }
 
+ext {
+    set('springAiVersion', "1.1.2")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
+}
+
 repositories {
     mavenCentral()
+
     maven { url 'https://repo.spring.io/milestone' }
     maven { url 'https://repo.spring.io/snapshot' }
     maven {
@@ -30,19 +42,22 @@ repositories {
     }
 }
 
+
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // TODO: Uncomment these dependencies - see README Step 2
-    // implementation platform("org.springframework.ai:spring-ai-bom:2.0.0-M2")
-    // // MCP Client — connects to remote MCP servers
-    // implementation 'org.springframework.ai:spring-ai-starter-mcp-client'
-    // // LLM — needed because the client decides which tools to call
-    // implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    // TODO: Uncomment these dependencies - see README Setup Section
+//     MCP Client — connects to remote MCP servers
+//     implementation 'org.springframework.ai:spring-ai-starter-mcp-client'
+     // LLM — needed because the client decides which tools to call
+//     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 }
 
 tasks.named('test') {
