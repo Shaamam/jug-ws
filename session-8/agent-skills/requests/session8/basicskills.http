@@ -1,0 +1,40 @@
+@host = http://localhost:8080
+
+
+### Test Code Explainer Skill
+POST {{host}}/api/basicskills/chat
+Content-Type: application/json
+
+{
+  "question": "Explain this code: public static void main(String[] args) { System.out.println(\"Hello World\"); }"
+}
+
+###
+
+### Test Email Composer Skill
+POST {{host}}/api/basicskills/chat
+Content-Type: application/json
+
+{
+  "question": "Write a professional email to a client about project delay"
+}
+
+###
+
+### Test Product Advisor Skill
+POST {{host}}/api/basicskills/chat
+Content-Type: application/json
+
+{
+  "question": "What laptop should I buy for software development under $1500?"
+}
+
+###
+
+### Test General Question with Basic Skills
+POST {{host}}/api/basicskills/chat
+Content-Type: application/json
+
+{
+  "question": "Help me understand how recursion works in programming"
+}

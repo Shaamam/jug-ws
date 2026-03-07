@@ -37,12 +37,11 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // TODO: Uncomment these dependencies - see README Setup Section
-    // implementation platform("org.springframework.ai:spring-ai-bom:2.0.0-M2")
-    // implementation 'org.springframework.ai:spring-ai-starter-model-openai'
-    //
-    // // Agent Skills — SkillsTool, FileSystemTools, ShellTools
-    // implementation 'org.springaicommunity:spring-ai-agent-utils:0.4.2'
+    implementation platform("org.springframework.ai:spring-ai-bom:2.0.0-M2")
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+
+    // Agent Skills — SkillsTool, FileSystemTools, ShellTools
+    implementation 'org.springaicommunity:spring-ai-agent-utils:0.4.2'
 }
 
 tasks.named('test') {

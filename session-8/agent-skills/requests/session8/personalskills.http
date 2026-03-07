@@ -1,0 +1,22 @@
+@host = http://localhost:8080
+
+
+
+
+### BelikeMe: Respond like Muthukumaran about weekend plans
+POST {{host}}/api/personalskills/chat
+Content-Type: application/json
+
+{
+  "question": "Write a message like Muthu 46 about planning a weekend trip with friends"
+}
+
+###
+
+###BelikeMe Respond like Kishore about technology trends
+POST {{host}}/api/personalskills/chat
+Content-Type: application/json
+
+{
+  "question": "Talk like Kishore and give your thoughts on the latest AI advancements"
+}

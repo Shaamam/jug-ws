@@ -1,329 +1,255 @@
-# Session 8: Agent Skills - Workshop
+# Session 8: Spring AI Agent Skills
 
-## 🎯 Learning Objectives
+## What Are Agent Skills?
 
-- Understand skill-based agent architecture
-- Create reusable LLM skills as markdown files
-- Use SkillsTool for dynamic skill loading
-- Integrate FileSystemTools for file operations
+**Agent Skills** are modular capabilities packaged as Markdown files that AI agents can discover and use on demand. Think of them as plugin-like modules that extend what an AI agent can do, without hardcoding everything into prompts.
 
-## 📋 Prerequisites
+### Key Concepts
 
-- OpenAI API key
-- Understanding of prompting
+1. **Modular Design**: Each skill is a self-contained folder with instructions and resources
+2. **Progressive Disclosure**: Agents only load what they need, when they need it
+3. **LLM-Agnostic**: Skills work across different AI models (OpenAI, Anthropic, Google, etc.)
 
-## 🤔 What are Agent Skills?
+### Skill Structure
 
-**Skills** are reusable prompt templates stored as `.md` files.
-
-**Why Skills?**
-- **Reusable:** Define once, use everywhere
-- **Maintainable:** Update prompts without code changes
-- **Shareable:** Share skills across projects
-- **Versionable:** Track in git
-
----
-
-## 🏗️ Setup Instructions
-
-Follow these steps to set up your Spring Boot application with Agent Skills.
-
-### **Step 1: Prerequisites**
-
-- Java 21 installed
-- OpenAI API key (get from https://platform.openai.com/api-keys)
-- Gradle wrapper included in project
-
-### **Step 2: Enable Dependencies**
-
-Open `build.gradle` and uncomment the Spring AI dependencies:
-
-```gradle
-dependencies {
-    // Spring AI dependencies - uncomment these
-    implementation platform("org.springframework.ai:spring-ai-bom:2.0.0-M2")
-    implementation "org.springframework.ai:spring-ai-starter-model-openai"
-    implementation 'ai.timefold.constraints:spring-ai-agent-utils:0.4.2'
-    
-    // Other dependencies already uncommented...
-}
+```
+my-skill/
+├── SKILL.md          # Required: instructions + metadata
+├── scripts/          # Optional: helper scripts
+├── references/       # Optional: documentation
+└── assets/           # Optional: templates, resources
 ```
 
-**What each dependency does:**
-- `spring-ai-bom`: Bill of Materials that manages Spring AI version compatibility
-- `spring-ai-starter-model-openai`: OpenAI integration for chat models (includes ChatModel, ChatClient)
-- `spring-ai-agent-utils`: Community library providing SkillsTool and FileSystemTools for agent capabilities
+### How Skills Work (3-Step Process)
 
-**After uncommenting**, refresh Gradle dependencies:
-```bash
-./gradlew clean build
+1. **Discovery** (at startup)
+   - Agent scans skill folders and reads YAML frontmatter
+   - Builds a lightweight registry of available skills
+   - Only loads skill names and descriptions (minimal context)
+
+2. **Semantic Matching** (during conversation)
+   - User makes a request
+   - LLM matches request to relevant skill descriptions
+   - Decides if a skill should be invoked
+
+3. **Execution** (on skill invocation)
+   - Full SKILL.md content is loaded
+   - LLM follows the instructions
+   - Can read reference files or run scripts as needed
+
+## How Spring AI Simplifies Agent Skills
+
+Spring AI brings Agent Skills to Java developers with:
+
+### 1. **Seamless Integration**
+- Add skills with just a few lines of configuration
+- No architectural changes to existing apps
+- Works with Spring Boot's familiar patterns
+
+### 2. **LLM Portability**
+- Write skills once, use with any LLM provider
+- Switch between OpenAI, Anthropic, Google without code changes
+- No vendor lock-in
+
+### 3. **Tool-Based Approach**
+Spring AI implements three core tools:
+
+- **SkillsTool**: Discovers and loads skills on demand
+- **FileSystemTools**: Reads reference files from skills
+- **ShellTools**: Executes helper scripts (optional)
+
+### 4. **Resource Loading**
+- Load skills from filesystem: `.addSkillsDirectory(".claude/skills")`
+- Load from classpath: `.addSkillsResource(resourceLoader.getResource("classpath:skills"))`
+- Perfect for packaged JAR/WAR deployments
+
+## Our Code: session8-agent-skills
+
+This project demonstrates Spring AI Agent Skills with a REST API that uses multiple skills.
+
+### Project Structure
+
+```
+session8/
+├── src/main/
+│   ├── java/
+│   │   └── tools/muthuishere/session8/
+│   │       ├── Session8AgentSkillsApplication.java
+│   │       └── agentskills/
+│   │           ├── AgentSkillsController.java   # Main controller
+│   │           ├── ChatBotRequest.java          # Request DTO
+│   │           └── ChatBotResponse.java         # Response DTO
+│   └── resources/
+│       ├── application.properties
+│       └── skills/                               # Our skills folder
+│           └── pptx/                            # PowerPoint generation skill
+│               ├── SKILL.md                     # Main instructions
+│               ├── pptxgenjs.md                # JavaScript guide
+│               ├── editing.md                  # Editing guide
+│               └── scripts/                    # Helper scripts
+└── requests/
+    └── session8/
+        └── agentskills.http                     # Test requests
 ```
 
-### **Step 3: Configure Application Properties**
+### Key Components
 
-Open `src/main/resources/application.properties` and replace with:
+#### 1. AgentSkillsController.java
 
-```properties
-spring.application.name=session8-agent-skills
-
-# OpenAI Configuration
-spring.ai.openai.api-key=${OPENAI_API_KEY}
-spring.ai.openai.base-url=https://api.openai.com
-spring.ai.openai.chat.model=gpt-4o-mini
-spring.ai.openai.chat.temperature=0.7
-
-# Logging
-logging.level.tools.muthuishere.session8=INFO
-logging.level.org.springframework.ai=DEBUG
-```
-
-**What each property does:**
-- `spring.ai.openai.api-key`: Your OpenAI API key (read from environment variable)
-- `spring.ai.openai.base-url`: OpenAI API endpoint
-- `spring.ai.openai.chat.model`: Model to use (gpt-4o-mini for cost-effectiveness)
-- `spring.ai.openai.chat.temperature`: Controls randomness (0.7 = balanced creativity)
-- `logging.level.*`: Debug logging for troubleshooting
-
-### **Step 4: Set Environment Variables**
-
-Before running, export your OpenAI API key:
-
-```bash
-export OPENAI_API_KEY=sk-proj-your-key-here
-```
-
-### **Step 5: Run the Application**
-
-```bash
-./gradlew bootRun
-```
-
-The application will start on `http://localhost:8080`
-
----
-
-## 💻 Implementation
-
-### Exercise 1: Create Skill Files
-
-**Location:** `skills/code-explainer/SKILL.md`
-
-```markdown
----
-name: code-explainer
-description: Explains code snippets in plain English with examples
----
-
-# Code Explainer
-
-When asked to explain code:
-
-1. **One-Line Summary**: Start with a single sentence describing what the code does
-2. **Section Breakdown**: Walk through each significant section or line
-3. **Concepts**: Identify and explain any design patterns, algorithms
-4. **Potential Issues**: Highlight any bugs or improvement opportunities
-5. **Analogy**: If complex, provide a real-world analogy
-6. **Simplified Example**: Show a minimal version
-
-Use plain English. Assume the reader knows basic programming.
-```
-
-### Exercise 2: More Skills
-
-**email-composer/SKILL.md:**
-```markdown
----
-name: email-composer
-description: Composes professional emails
----
-
-# Email Composer
-
-1. **Subject Line**: Clear, specific
-2. **Greeting**: "Hi [Name]" for internal, "Dear [Name]" for external
-3. **Opening**: State purpose in first sentence
-4. **Body**: Short paragraphs (2-3 sentences max)
-5. **Action Items**: Clearly state what you need
-6. **Closing**: Clear call to action
-7. **Sign-off**: "Best regards" for formal, "Thanks" for casual
-
-Keep professional but approachable.
-```
-
-**product-advisor/SKILL.md:**
-```markdown
----
-name: product-advisor
-description: Recommends products based on needs
----
-
-# Product Advisor
-
-1. Ask about budget (low: <$500, medium: $500-$1500, high: >$1500)
-2. Ask about use case (gaming, productivity, creative, general)
-3. Recommend 2-3 products with pros/cons
-4. Mention warranty (standard: 1 year, extended: 3 years)
-5. If undecided, suggest mid-range option
-
-Keep concise and actionable.
-```
-
-### Exercise 3: Controller with Skills
-
-**Objective:** Build a chat endpoint that uses SkillsTool to load markdown skills and FileSystemTools for file operations.
-
-**File:** `AgentSkillsController.java`
-
-**Key Concepts:**
-- `SkillsTool` - Loads markdown skill files from a directory and makes them available to the LLM
-- `FileSystemTools` - Provides file system operations (read, write, list, etc.)
-- Skills directory structure: `skills/{skill-name}/SKILL.md`
-
-**Implementation:**
-
-Replace the TODO sections in the constructor and chat method:
-
-**Constructor:**
 ```java
-public AgentSkillsController(ChatModel chatModel) {
-    this.chatClient = ChatClient.builder(chatModel)
-            .defaultToolCallbacks(SkillsTool.builder()
-                    .addSkillsDirectory("skills")  // ← Loads all skills from directory
-                    .build())
-            .defaultTools(FileSystemTools.builder().build())  // ← File operations
-            .build();
-}
-```
-
-**Chat Method:**
-```java
-@PostMapping("/api/chat")
-public ChatBotResponse chat(@RequestBody ChatBotRequest request) {
-    log.info("Received question: {}", request.question());
-
-    String answer = chatClient.prompt()
-            .user(request.question())
-            .call()
-            .content();
-
-    return new ChatBotResponse(request.question(), answer);
-}
-```
-
-**Complete Controller:**
-```java
-package tools.muthuishere.session8.agentskills;
-
-import ai.timefold.solver.constraints.tools.FileSystemTools;
-import ai.timefold.solver.constraints.tools.SkillsTool;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-
-@Slf4j
 @RestController
 public class AgentSkillsController {
     private final ChatClient chatClient;
 
-    public AgentSkillsController(ChatModel chatModel) {
-        // SkillsTool loads all markdown skills from the skills directory
-        // FileSystemTools provides file operations (read, write, list, etc.)
+    public AgentSkillsController(ChatModel chatModel, ResourceLoader resourceLoader) {
         this.chatClient = ChatClient.builder(chatModel)
                 .defaultToolCallbacks(SkillsTool.builder()
-                        .addSkillsDirectory("skills")
+                        .addSkillsResource(resourceLoader.getResource("classpath:skills"))
                         .build())
                 .defaultTools(FileSystemTools.builder().build())
+                .defaultToolContext(Map.of(
+                    "workingDirectory", Path.of(System.getProperty("user.dir"))
+                ))
                 .build();
     }
 
     @PostMapping("/api/chat")
     public ChatBotResponse chat(@RequestBody ChatBotRequest request) {
-        log.info("Received question: {}", request.question());
-
         String answer = chatClient.prompt()
                 .user(request.question())
                 .call()
                 .content();
-
         return new ChatBotResponse(request.question(), answer);
     }
 }
 ```
 
-**How It Works:**
+**What it does:**
+- Configures ChatClient with SkillsTool pointing to `classpath:skills`
+- Adds FileSystemTools for reading skill files
+- Sets up working directory context
+- Provides REST endpoint `/api/chat` for user questions
 
-1. **Skill Loading:** At startup, `SkillsTool` scans the `skills/` directory for folders containing `SKILL.md` files
-   
-2. **Skill Registration:** Each skill (code-explainer, email-composer, product-advisor) becomes available to the LLM
+#### 2. Available Skills
 
-3. **Question Analysis:** User asks "Explain this code: for(int i=0; i<10; i++){...}"
+**PPTX Skill** (`src/main/resources/skills/pptx/`)
+- Creates PowerPoint presentations
+- Reads/edits existing presentations
+- Uses PptxGenJS for generation
+- Includes design guidelines and color palettes
 
-4. **Skill Selection:** GPT analyzes the question and decides to use the `code-explainer` skill
+### How to Use
 
-5. **Skill Execution:** LLM follows the instructions in `code-explainer/SKILL.md` to structure its response
-
-6. **File Operations:** If needed, FileSystemTools can be used to read/write files during the conversation
-
----
-
-## 🧪 Testing
+#### 1. Start the Application
 
 ```bash
-# Use code-explainer skill
-curl -X POST http://localhost:8080/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Explain this Java code: public static void main(String[] args) { System.out.println(\"Hello\"); }"}'
-
-# Use email-composer skill
-curl -X POST http://localhost:8080/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Compose a professional email to request vacation approval"}'
-
-# Use product-advisor skill
-curl -X POST http://localhost:8080/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Recommend a laptop for software development, budget $1500"}'
+./gradlew bootRun
 ```
 
-**How it works:**
-1. LLM analyzes question
-2. Decides which skill to use
-3. Follows skill instructions
-4. Generates response
+#### 2. Test with HTTP Requests
+
+**Create a PowerPoint about Spring AI:**
+
+```http
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+  "question": "Create a PowerPoint presentation explaining Spring AI. Include slides covering: what is Spring AI, key features, architecture overview, how to get started, and a practical example. Use a professional design with the Teal Trust color palette."
+}
+```
+
+The agent will:
+1. Match your request to the `pptx` skill
+2. Load the full SKILL.md instructions
+3. Read design guidelines and color palette info
+4. Generate the presentation following best practices
+
+#### 3. Other Example Requests
+
+See `requests/session8/agentskills.http` for more examples:
+- Code explanation requests
+- Email composition
+- Product recommendations
+
+### Configuration
+
+**application.properties:**
+```properties
+spring.application.name=session8-agent-skills
+server.port=8080
+
+# OpenAI Configuration
+spring.ai.openai.chat.api-key=${OPENAI_API_KEY}
+spring.ai.openai.chat.options.model=gpt-4o-mini
+```
+
+**Environment Variables:**
+```bash
+export OPENAI_API_KEY=your-api-key-here
+```
+
+### Dependencies
+
+```xml
+<dependency>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>spring-ai-agent-utils</artifactId>
+    <version>0.4.2</version>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-model-openai</artifactId>
+    <version>2.0.0-M2</version>
+</dependency>
+```
+
+## Benefits of This Approach
+
+### 1. **Modularity**
+- Add new skills by creating new folders
+- Update skill behavior without code changes
+- Share skills across projects
+
+### 2. **Token Efficiency**
+- Only loads skills when needed
+- Keeps context window lean
+- Can register hundreds of skills efficiently
+
+### 3. **Flexibility**
+- Skills can include scripts, templates, references
+- Progressive disclosure of information
+- On-demand resource loading
+
+### 4. **Portability**
+- Skills work with any LLM provider
+- Easy to switch models
+- No vendor lock-in
+
+## Security Considerations
+
+⚠️ **Important**: Scripts in skills execute directly on your machine without sandboxing.
+
+**Best Practices:**
+- Review all skill scripts before use
+- Be cautious with third-party skills
+- Consider running in a containerized environment
+- Implement approval workflows for sensitive operations
+
+## Resources
+
+- **Spring AI Documentation**: [docs.spring.io/spring-ai](https://docs.spring.io/spring-ai)
+- **Agent Skills Specification**: [agentskills.io](https://agentskills.io)
+- **Spring AI Agent Utils**: [GitHub Repository](https://github.com/tzolov/spring-ai-agent-utils)
+- **Blog Post**: [Spring AI Agentic Patterns - Agent Skills](https://spring.io/blog/2026/01/13/spring-ai-generic-agent-skills)
+
+## Next Steps
+
+1. **Explore More Skills**: Add code-reviewer, email-composer, or product-advisor skills
+2. **Create Custom Skills**: Build domain-specific skills for your use case
+3. **Advanced Patterns**: Explore TodoWriteTool, AskUserQuestionTool, and Subagent Orchestration
 
 ---
 
-## 🎯 Success Criteria
-
-- ✅ Skills directory created with 3+ skills
-- ✅ SkillsTool loads skills
-- ✅ LLM follows skill instructions
-- ✅ FileSystemTools available for file operations
-
----
-
-## 🚀 Extension Ideas
-
-1. **Custom Skills:** Create domain-specific skills
-2. **Skill Chaining:** Combine multiple skills
-3. **Skill Parameters:** Pass variables to skills
-4. **Skill Library:** Build reusable skill collection
-
----
-
-## 📚 Key Concepts
-
-1. **SkillsTool** - Loads markdown skills
-2. **FileSystemTools** - File operations
-3. **Dynamic Loading** - Skills loaded at runtime
-4. **Prompt Engineering** - Structured instructions
-
----
-
-## 📖 Resources
-
-- [Spring AI Agent Utils](https://github.com/spring-projects-experimental/spring-ai-agent-utils)
-- [Prompt Engineering Guide](https://www.promptingguide.ai/)
+*Part of the Spring AI Agentic Patterns series - exploring modular, reusable AI capabilities in Java applications.*

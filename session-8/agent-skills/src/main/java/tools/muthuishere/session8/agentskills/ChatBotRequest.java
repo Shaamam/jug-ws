@@ -1,4 +1,4 @@
 package tools.muthuishere.session8.agentskills;
 
-public record ChatBotRequest(String question) {
+public record ChatBotRequest(String question, String sessionId) {
 }
